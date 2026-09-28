@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+
+# Secrets
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Optional: uncomment if you don't want your background pictures on GitHub
+# static/backgrounds/*.jpg
+# static/backgrounds/*.jpeg
+# static/backgrounds/*.png
+# static/backgrounds/*.webp
