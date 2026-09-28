@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{% if query %}Search: {{ query }}{% elif active_topic %}{{ active_topic.name }}{% else %}Blogs{% endif %} | {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <h1>
+    {% if query %}Results for “{{ query }}”
+    {% elif active_topic %}{{ active_topic.name }}
+    {% else %}All blogs{% endif %}
+  </h1>
+
+  {% if topics %}
+    <p class="topic-bar" aria-label="Filter by topic">
+      <a class="chip {% if not active_topic and not query %}chip-on{% endif %}" href="{% url 'blog:post_list' %}">All</a>
+      {% for topic in topics %}
+        <a class="chip {% if active_topic == topic %}chip-on{% endif %}" href="?topic={{ topic.slug }}">{{ topic.name }}</a>
+      {% endfor %}
+    </p>
+  {% endif %}
+</section>
+
+<section class="section">
+  {% if page.object_list %}
+    <div class="grid">
+      {% for post in page.object_list %}{% include "blog/_post_card.html" %}{% endfor %}
+    </div>
+
+    {% if page.paginator.num_pages > 1 %}
+      <nav class="pager panel" aria-label="Pages">
+        {% if page.has_previous %}<a href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page.previous_page_number }}">Newer posts</a>{% else %}<span></span>{% endif %}
+        <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page.next_page_number }}">Older posts</a>{% else %}<span></span>{% endif %}
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="panel narrow">
+      {% if query or active_topic %}
+        <p>Nothing matched. Try a different word, or <a href="{% url 'blog:post_list' %}">see all blogs</a>.</p>
+      {% else %}
+        <p>No posts yet.{% if request.user.is_staff %} <a href="{% url 'admin:blog_post_add' %}">Write your first post</a>.{% else %} Check back soon.{% endif %}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

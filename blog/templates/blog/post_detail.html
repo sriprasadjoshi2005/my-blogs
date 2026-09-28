@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} | {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{{ post.summary|default:profile.tagline }}{% endblock %}
+
+{% block content %}
+<article class="panel post">
+  {% if post.status != 'published' %}
+    <p class="notice">Draft preview. Visitors can't see this post yet.</p>
+  {% endif %}
+
+  <header class="post-head">
+    <p class="meta">
+      {% if post.published_at %}<time datetime="{{ post.published_at|date:'Y-m-d' }}">{{ post.published_at|date:"j F Y" }}</time>{% endif %}
+      {% for topic in post.topics.all %}<a class="chip" href="{% url 'blog:post_list' %}?topic={{ topic.slug }}">{{ topic.name }}</a>{% endfor %}
+    </p>
+    <h1>{{ post.title }}</h1>
+    {% if post.summary %}<p class="lead">{{ post.summary }}</p>{% endif %}
+    {% if request.user.is_staff %}
+      <p><a href="{% url 'admin:blog_post_change' post.pk %}">Edit this post</a></p>
+    {% endif %}
+  </header>
+
+  {% if post.cover_image %}
+    <img class="post-cover" src="{{ post.cover_image.url }}" alt="">
+  {% endif %}
+
+  <div class="prose">{{ post.body|safe }}</div>
+</article>
+
+<nav class="pager panel" aria-label="More posts">
+  {% if older %}<a href="{{ older.get_absolute_url }}">Previous: {{ older.title }}</a>{% else %}<span></span>{% endif %}
+  {% if newer %}<a href="{{ newer.get_absolute_url }}">Next: {{ newer.title }}</a>{% else %}<span></span>{% endif %}
+</nav>
+{% endblock %}

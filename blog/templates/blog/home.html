@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel hero">
+  <h1>{{ SITE_NAME }}</h1>
+  <p class="lead">{{ profile.tagline }}</p>
+  <p class="actions">
+    <a class="button" href="{% url 'blog:post_list' %}">Read the blog</a>
+    <a class="button button-quiet" href="{% url 'blog:about' %}">About me</a>
+  </p>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Latest posts</h2>
+    {% if latest_posts %}<a href="{% url 'blog:post_list' %}">See all blogs</a>{% endif %}
+  </div>
+
+  {% if latest_posts %}
+    <div class="grid">
+      {% for post in latest_posts %}{% include "blog/_post_card.html" %}{% endfor %}
+    </div>
+  {% else %}
+    <div class="panel narrow">
+      <p>No posts yet.{% if request.user.is_staff %} <a href="{% url 'admin:blog_post_add' %}">Write your first post</a>.{% else %} Check back soon.{% endif %}</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

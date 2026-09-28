@@ -1,0 +1,13 @@
+<article class="card">
+  {% if post.cover_image %}
+    <img class="card-cover" src="{{ post.cover_image.url }}" alt="" loading="lazy">
+  {% endif %}
+  <div class="card-body">
+    <p class="meta">
+      <time datetime="{{ post.published_at|date:'Y-m-d' }}">{{ post.published_at|date:"j M Y" }}</time>
+      {% for topic in post.topics.all %}<span class="chip">{{ topic.name }}</span>{% endfor %}
+    </p>
+    <h3><a class="card-link" href="{{ post.get_absolute_url }}">{{ post.title }}</a></h3>
+    {% if post.summary %}<p>{{ post.summary }}</p>{% endif %}
+  </div>
+</article>

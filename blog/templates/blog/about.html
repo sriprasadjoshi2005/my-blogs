@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}About me | {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="panel about">
+  {% if profile.photo %}
+    <img class="about-photo" src="{{ profile.photo.url }}" alt="Photo of {{ profile.display_name }}">
+  {% endif %}
+  <div>
+    <h1>{{ profile.display_name }}</h1>
+    {% if profile.tagline %}<p class="lead">{{ profile.tagline }}</p>{% endif %}
+    <div class="prose">
+      {% if profile.about %}{{ profile.about|safe }}{% else %}<p>This page is empty for now.{% if request.user.is_staff %} <a href="{% url 'admin:blog_siteprofile_changelist' %}">Add your story in the admin panel</a>.{% endif %}</p>{% endif %}
+    </div>
+    {% if profile.social_links %}
+      <p class="social">
+        {% for label, url in profile.social_links %}<a class="chip" href="{{ url }}" rel="noopener" target="_blank">{{ label }}</a>{% endfor %}
+      </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

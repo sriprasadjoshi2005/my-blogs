@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Page not found | {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="panel narrow">
+  <h1>Page not found</h1>
+  <p>That page doesn't exist, or the post was moved. Try the blog list or search for a topic.</p>
+  <p class="actions"><a class="button" href="{% url 'blog:post_list' %}">Browse all blogs</a></p>
+</section>
+{% endblock %}
