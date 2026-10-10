@@ -132,19 +132,16 @@ CKEDITOR_5_FILE_UPLOAD_PERMISSION = "staff"  # only you can upload
 CKEDITOR_5_CONFIGS = {
     "default": {
         "toolbar": [
-            "heading", "|",
-            "bold", "italic", "underline", "strikethrough", "subscript", "superscript", "code", "highlight", "|",
-            "specialCharacters", "|",
-            "link", "insertImage", "insertTable", "|",
-            "bulletedList", "numberedList", "blockQuote", "codeBlock", "|",
-            "removeFormat", "|",
-            "sourceEditing", "undo", "redo",
+            "heading", "|", "bold", "italic", "underline", "link", "|",
+            "bulletedList", "numberedList", "blockQuote", "|",
+            "insertImage", "insertTable", "|", "undo", "redo",
         ],
     },
     "blog": {
         "toolbar": [
             "heading", "|",
-            "bold", "italic", "underline", "strikethrough", "code", "highlight", "|",
+            "bold", "italic", "underline", "strikethrough", "subscript", "superscript", "code", "highlight", "|",
+            "specialCharacters", "|",
             "link", "insertImage", "insertTable", "|",
             "bulletedList", "numberedList", "blockQuote", "codeBlock", "|",
             "removeFormat", "|",
