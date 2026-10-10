@@ -115,6 +115,12 @@ SITE_NAME = os.environ.get("SITE_NAME", "My Blog")
 BACKGROUND_MODE = os.environ.get("BACKGROUND_MODE", "slideshow")  # or "random"
 POSTS_PER_PAGE = 9
 CONTACT_NOTIFY_EMAIL = os.environ.get("CONTACT_NOTIFY_EMAIL", "")
+# ---- Visitor accounts and comments ----
+LOGIN_URL = "blog:login"
+LOGIN_REDIRECT_URL = "blog:home"
+LOGOUT_REDIRECT_URL = "blog:home"
+COMMENTS_AUTO_APPROVE = env_bool("COMMENTS_AUTO_APPROVE", True)
+COMMENT_COOLDOWN_SECONDS = 20
 
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
