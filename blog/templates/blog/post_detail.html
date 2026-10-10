@@ -2,6 +2,20 @@
 
 {% block title %}{{ post.title }} | {{ SITE_NAME }}{% endblock %}
 {% block meta_description %}{{ post.summary|default:profile.tagline }}{% endblock %}
+{% block social_meta %}
+  <meta property="og:site_name" content="{{ SITE_NAME }}">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ post.title }}">
+  <meta property="og:description" content="{{ post.summary|default:profile.tagline }}">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  {% if post.published_at %}<meta property="article:published_time" content="{{ post.published_at|date:'c' }}">{% endif %}
+  {% if share_image %}
+    <meta property="og:image" content="{{ share_image }}">
+    <meta name="twitter:card" content="summary_large_image">
+  {% else %}
+    <meta name="twitter:card" content="summary">
+  {% endif %}
+{% endblock %}
 
 {% block content %}
 <article class="panel post">

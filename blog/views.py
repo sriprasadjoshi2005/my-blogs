@@ -60,7 +60,12 @@ def post_detail(request, slug):
     post = get_object_or_404(qs, slug=slug)
     newer = Post.published.filter(published_at__gt=post.published_at).order_by("published_at").first() if post.published_at else None
     older = Post.published.filter(published_at__lt=post.published_at).first() if post.published_at else None
-    return render(request, "blog/post_detail.html", {"post": post, "newer": newer, "older": older})
+    share_image = request.build_absolute_uri(post.cover_image.url) if post.cover_image else ""
+    return render(
+        request,
+        "blog/post_detail.html",
+        {"post": post, "newer": newer, "older": older, "share_image": share_image},
+    )
 
 
 def about(request):

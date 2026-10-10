@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ SITE_NAME }}{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}{{ profile.tagline }}{% endblock %}">
+    {% block social_meta %}
+    <meta property="og:site_name" content="{{ SITE_NAME }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ SITE_NAME }}">
+    <meta property="og:description" content="{{ profile.tagline }}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta name="twitter:card" content="summary">
+  {% endblock %}
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
