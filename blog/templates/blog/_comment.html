@@ -1,0 +1,24 @@
+{# One comment or reply. Needs: c (the comment), parent (the top-level comment a reply attaches to), mention (True to prefill @name). #}
+<p class="comment-meta">
+  <span class="comment-author">{{ c.author.get_username }}</span>
+  {% if c.author.is_staff %}<span class="badge">Author</span>{% endif %}
+  <time datetime="{{ c.created_at|date:'c' }}">{{ c.created_at|date:"j M Y" }}</time>
+</p>
+<p class="comment-body">{{ c.body|linebreaksbr }}</p>
+
+{% if user.is_authenticated %}
+  <details class="reply-box">
+    <summary>Reply</summary>
+    <form method="post" action="{{ post.get_absolute_url }}#comments" class="form" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="parent" value="{{ parent.pk }}">
+      <div class="field">
+        <label class="sr-only" for="reply-{{ c.pk }}">Reply to {{ c.author.get_username }}</label>
+        <textarea id="reply-{{ c.pk }}" name="body" rows="3" maxlength="1000" required>{% if mention %}@{{ c.author.get_username }} {% endif %}</textarea>
+      </div>
+      <p class="actions"><button class="button" type="submit">Post reply</button></p>
+    </form>
+  </details>
+{% else %}
+  <a class="reply-login" href="{% url 'blog:login' %}?next={{ request.path|urlencode }}%23comment-{{ c.pk }}">Reply</a>
+{% endif %}
