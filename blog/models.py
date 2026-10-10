@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -159,3 +160,23 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.subject or self.message[:40]}"
+
+
+class Comment(models.Model):
+    """A comment on a post, written by a signed-in visitor."""
+
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="blog_comments"
+    )
+    body = models.TextField(max_length=1000)
+    is_approved = models.BooleanField(
+        default=True, help_text="Untick to hide this comment from the site."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.author} on {self.post}: {self.body[:40]}"

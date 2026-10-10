@@ -1,11 +1,11 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import ContactMessage, Post, SiteProfile, Topic
+from .models import Comment, ContactMessage, Post, SiteProfile, Topic
 
 
 class BlogTests(TestCase):
@@ -90,3 +90,86 @@ class BlogTests(TestCase):
         response = self.client.get(self.p1.get_absolute_url())
         self.assertContains(response, 'property="og:title" content="Frieren review"')
         self.assertContains(response, 'name="twitter:card"')
+
+
+class CommentTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.post = Post.objects.create(title="Open post", body="<p>Hello</p>", status="published")
+        cls.draft = Post.objects.create(title="Hidden draft", body="<p>Nope</p>", status="draft")
+        cls.user = get_user_model().objects.create_user("sakura", password="correct-horse-42")
+        cls.url = cls.post.get_absolute_url()
+
+    def test_guest_cannot_comment_and_is_sent_to_login(self):
+        res = self.client.post(self.url, {"body": "Hi"})
+        self.assertEqual(res.status_code, 302)
+        self.assertIn(reverse("blog:login"), res["Location"])
+        self.assertEqual(Comment.objects.count(), 0)
+
+    def test_logged_in_user_can_comment_and_it_shows(self):
+        self.client.force_login(self.user)
+        res = self.client.post(self.url, {"body": "Great review!"})
+        self.assertRedirects(res, f"{self.url}#comments", fetch_redirect_response=False)
+        self.assertContains(self.client.get(self.url), "Great review!")
+        self.assertEqual(Comment.objects.get().author, self.user)
+
+    def test_hidden_comment_is_not_shown(self):
+        Comment.objects.create(post=self.post, author=self.user, body="Secret words", is_approved=False)
+        self.assertNotContains(self.client.get(self.url), "Secret words")
+
+    @override_settings(COMMENTS_AUTO_APPROVE=False)
+    def test_comment_waits_for_approval_when_moderation_is_on(self):
+        self.client.force_login(self.user)
+        self.client.post(self.url, {"body": "Pending thought"})
+        self.assertFalse(Comment.objects.get().is_approved)
+        self.assertNotContains(self.client.get(self.url), "Pending thought")
+
+    def test_cooldown_blocks_rapid_second_comment(self):
+        self.client.force_login(self.user)
+        self.client.post(self.url, {"body": "First"})
+        self.client.post(self.url, {"body": "Second"})
+        self.assertEqual(Comment.objects.count(), 1)
+
+    def test_html_in_comments_is_escaped(self):
+        Comment.objects.create(post=self.post, author=self.user, body="<script>alert(1)</script>")
+        res = self.client.get(self.url)
+        self.assertNotContains(res, "<script>alert(1)</script>")
+        self.assertContains(res, "&lt;script&gt;")
+
+    def test_cannot_comment_on_draft(self):
+        staff = get_user_model().objects.create_user("boss", password="pw-for-tests-1", is_staff=True)
+        self.client.force_login(staff)
+        self.client.post(self.draft.get_absolute_url(), {"body": "Sneaky"})
+        self.assertEqual(Comment.objects.count(), 0)
+
+    def test_signup_creates_normal_user_and_logs_in(self):
+        res = self.client.post(
+            reverse("blog:signup"),
+            {"username": "newfan", "password1": "Zq7!mellow-tree", "password2": "Zq7!mellow-tree", "website": ""},
+        )
+        self.assertRedirects(res, reverse("blog:home"))
+        user = get_user_model().objects.get(username="newfan")
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    def test_signup_honeypot_blocks_bots(self):
+        self.client.post(
+            reverse("blog:signup"),
+            {"username": "bot", "password1": "Zq7!mellow-tree", "password2": "Zq7!mellow-tree", "website": "http://spam"},
+        )
+        self.assertFalse(get_user_model().objects.filter(username="bot").exists())
+
+    def test_login_and_logout(self):
+        res = self.client.post(reverse("blog:login"), {"username": "sakura", "password": "correct-horse-42"})
+        self.assertEqual(res.status_code, 302)
+        self.assertContains(self.client.get(reverse("blog:home")), "Log out")
+        self.client.post(reverse("blog:logout"))
+        self.assertContains(self.client.get(reverse("blog:home")), "Sign up")
+
+    def test_signup_ignores_external_next_url(self):
+        res = self.client.post(
+            reverse("blog:signup"),
+            {"username": "safe", "password1": "Zq7!mellow-tree", "password2": "Zq7!mellow-tree", "next": "https://evil.example/"},
+        )
+        self.assertRedirects(res, reverse("blog:home"))

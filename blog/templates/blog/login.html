@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Log in | {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="panel narrow">
+  <h1>Log in</h1>
+  <p class="lead">Log in to leave comments on posts.</p>
+
+  <form method="post" class="form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% if form.non_field_errors %}
+      {% for e in form.non_field_errors %}<p class="message message-error" role="alert">{{ e }}</p>{% endfor %}
+    {% endif %}
+
+    <div class="field {% if form.username.errors %}has-error{% endif %}">
+      <label for="{{ form.username.id_for_label }}">Username</label>
+      {{ form.username }}
+      {% for e in form.username.errors %}<p class="error">{{ e }}</p>{% endfor %}
+    </div>
+    <div class="field {% if form.password.errors %}has-error{% endif %}">
+      <label for="{{ form.password.id_for_label }}">Password</label>
+      {{ form.password }}
+      {% for e in form.password.errors %}<p class="error">{{ e }}</p>{% endfor %}
+    </div>
+
+    <p class="actions"><button class="button" type="submit">Log in</button></p>
+  </form>
+  <p>New here? <a href="{% url 'blog:signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a>.</p>
+</section>
+{% endblock %}

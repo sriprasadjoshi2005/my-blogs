@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ContactMessage, Post, SiteProfile, Topic
+from .models import Comment, ContactMessage, Post, SiteProfile, Topic
 
 admin.site.site_header = "Blog admin"
 admin.site.site_title = "Blog admin"
@@ -65,3 +65,28 @@ class ContactMessageAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ("author", "post", "short_body", "created_at", "is_approved")
+    list_filter = ("is_approved", "created_at")
+    list_editable = ("is_approved",)
+    search_fields = ("body", "author__username", "post__title")
+    readonly_fields = ("post", "author", "created_at")
+    actions = ["approve_selected", "hide_selected"]
+
+    def has_add_permission(self, request):
+        return False
+
+    @admin.display(description="Comment")
+    def short_body(self, obj):
+        return obj.body[:60]
+
+    @admin.action(description="Approve selected comments")
+    def approve_selected(self, request, queryset):
+        queryset.update(is_approved=True)
+
+    @admin.action(description="Hide selected comments")
+    def hide_selected(self, request, queryset):
+        queryset.update(is_approved=False)

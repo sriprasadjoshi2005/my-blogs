@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Sign up | {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="panel narrow">
+  <h1>Sign up</h1>
+  <p class="lead">Make an account to comment on posts. Your username is shown next to your comments.</p>
+
+  <form method="post" class="form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% if form.errors %}<p class="message message-error" role="alert">Please fix the highlighted fields and try again.</p>{% endif %}
+
+    <div class="field {% if form.username.errors %}has-error{% endif %}">
+      <label for="{{ form.username.id_for_label }}">Username</label>
+      {{ form.username }}
+      {% for e in form.username.errors %}<p class="error">{{ e }}</p>{% endfor %}
+      <div class="helptext">{{ form.username.help_text }}</div>
+    </div>
+    <div class="field {% if form.password1.errors %}has-error{% endif %}">
+      <label for="{{ form.password1.id_for_label }}">Password</label>
+      {{ form.password1 }}
+      {% for e in form.password1.errors %}<p class="error">{{ e }}</p>{% endfor %}
+      <div class="helptext">{{ form.password1.help_text }}</div>
+    </div>
+    <div class="field {% if form.password2.errors %}has-error{% endif %}">
+      <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+      {{ form.password2 }}
+      {% for e in form.password2.errors %}<p class="error">{{ e }}</p>{% endfor %}
+    </div>
+
+    <div class="hp" aria-hidden="true">
+      <label for="{{ form.website.id_for_label }}">Leave this empty</label>
+      {{ form.website }}
+    </div>
+
+    <p class="actions"><button class="button" type="submit">Create account</button></p>
+  </form>
+  <p>Already have an account? <a href="{% url 'blog:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in</a>.</p>
+</section>
+{% endblock %}

@@ -1,12 +1,18 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login
+from django.contrib.auth.views import redirect_to_login
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 
-from .forms import ContactForm
-from .models import Post, Topic
+from .forms import CommentForm, ContactForm, SignUpForm
+from .models import Comment, Post, Topic
 
 
 def home(request):
@@ -60,12 +66,70 @@ def post_detail(request, slug):
     post = get_object_or_404(qs, slug=slug)
     newer = Post.published.filter(published_at__gt=post.published_at).order_by("published_at").first() if post.published_at else None
     older = Post.published.filter(published_at__lt=post.published_at).first() if post.published_at else None
+
+    # Comments are only open on posts that are really published (not draft previews).
+    comments_open = Post.published.filter(pk=post.pk).exists()
+    comment_form = CommentForm()
+
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
+        if not comments_open:
+            messages.error(request, "Comments are closed on this post.")
+            return redirect(post.get_absolute_url())
+
+        comment_form = CommentForm(request.POST)
+        cooldown = timezone.now() - timedelta(seconds=settings.COMMENT_COOLDOWN_SECONDS)
+        if Comment.objects.filter(author=request.user, created_at__gte=cooldown).exists():
+            messages.error(request, "Easy there! Please wait a few seconds before commenting again.")
+        elif comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.is_approved = settings.COMMENTS_AUTO_APPROVE
+            comment.save()
+            if comment.is_approved:
+                messages.success(request, "Thanks! Your comment has been posted.")
+            else:
+                messages.success(request, "Thanks! Your comment will appear once it has been approved.")
+            return redirect(f"{post.get_absolute_url()}#comments")
+
+    comments = post.comments.filter(is_approved=True).select_related("author") if comments_open else []
     share_image = request.build_absolute_uri(post.cover_image.url) if post.cover_image else ""
     return render(
         request,
         "blog/post_detail.html",
-        {"post": post, "newer": newer, "older": older, "share_image": share_image},
+        {
+            "post": post,
+            "newer": newer,
+            "older": older,
+            "share_image": share_image,
+            "comments": comments,
+            "comments_open": comments_open,
+            "comment_form": comment_form,
+        },
     )
+
+
+def signup(request):
+    """Anyone can make an account so they can comment. These accounts can't enter the admin."""
+    if request.user.is_authenticated:
+        return redirect("blog:home")
+
+    next_url = request.POST.get("next") or request.GET.get("next", "")
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = ""
+
+    if request.method == "POST":
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, f"Welcome, {user.get_username()}! You can now comment on posts.")
+            return redirect(next_url or "blog:home")
+    else:
+        form = SignUpForm()
+    return render(request, "blog/signup.html", {"form": form, "next": next_url})
 
 
 def about(request):

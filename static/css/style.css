@@ -252,7 +252,7 @@ a.chip-on:hover { color: var(--ink); background: #ffc2d2; }
   border-radius: var(--radius-sm); padding: .6rem 1rem; font-size: .95rem;
 }
 .pager { max-width: calc(var(--read-width) + 4.5rem); margin-inline: auto; }
-.page > .pager:not(.post + .pager) { max-width: none; }
+.page > .pager:not(.post + .pager):not(.comments + .pager) { max-width: none; }
 
 /* Everything you write in the editor */
 .prose { max-width: var(--read-width); font-size: 1.125rem; line-height: 1.85; display: flow-root; }
@@ -320,6 +320,8 @@ a.chip-on:hover { color: var(--ink); background: #ffc2d2; }
 .field.has-error input, .field.has-error textarea { border-color: #ff7a8a; }
 .error { color: #ffa1ad; font-size: .92rem; margin: .3rem 0 0; }
 .hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+.helptext { color: var(--mist-dim); font-size: .88rem; margin-top: .3rem; }
+.helptext ul { padding-left: 1.2rem; margin: .3rem 0 0; }
 
 .messages { margin-bottom: 1.25rem; }
 .message {
@@ -328,6 +330,28 @@ a.chip-on:hover { color: var(--ink); background: #ffc2d2; }
 }
 .message-success { border-color: #7fd6a5; }
 .message-error { border-color: #ff7a8a; }
+
+/* ==========================================================================
+   Comments and account links
+   ========================================================================== */
+.comments { max-width: calc(var(--read-width) + 4.5rem); margin-inline: auto; margin-bottom: 1.5rem; background: var(--glass-strong); }
+.comments h2 { margin-bottom: .6rem; }
+.comment-list { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+.comment { padding: 1rem 0; border-bottom: 1px solid var(--line); }
+.comment:last-child { border-bottom: 0; }
+.comment-meta { display: flex; gap: .6rem; align-items: baseline; margin: 0 0 .3rem; color: var(--mist-dim); font-size: .92rem; }
+.comment-author { color: var(--sakura); font-weight: 500; }
+.comment-body { margin: 0; overflow-wrap: anywhere; }
+.comment-hint { color: var(--mist-dim); }
+
+.auth-links { display: flex; align-items: center; gap: .25rem; font-size: .95rem; }
+.auth-links a, .link-button {
+  color: var(--mist-dim); text-decoration: none; background: none; border: 0;
+  font: inherit; cursor: pointer; padding: .35rem .8rem; border-radius: 999px;
+}
+.auth-links a:hover, .link-button:hover { color: var(--mist); background: rgba(255, 255, 255, 0.08); }
+.auth-name { color: var(--sakura); font-weight: 500; }
+@media (max-width: 720px) { .auth-links { order: 2; } }
 
 /* ==========================================================================
    Footer
