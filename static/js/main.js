@@ -20,6 +20,7 @@
   var boxes = document.querySelectorAll(".field textarea");
 
   function grow(box) {
+    if (box.offsetParent === null) return; // hidden (a closed reply box): measured when it opens
     box.style.height = "auto";
     box.style.height = box.scrollHeight + 2 + "px"; // +2 covers the border
   }
@@ -32,4 +33,15 @@
 
   // Text wraps differently when the window size changes, so re-measure.
   window.addEventListener("resize", function () { boxes.forEach(grow); });
+
+  // Opening a reply box: size it, then put the cursor at the end (after the @name).
+  document.querySelectorAll("details.reply-box").forEach(function (details) {
+    details.addEventListener("toggle", function () {
+      var box = details.querySelector("textarea");
+      if (!box || !details.open) return;
+      grow(box);
+      box.focus();
+      box.setSelectionRange(box.value.length, box.value.length);
+    });
+  });
 })();
