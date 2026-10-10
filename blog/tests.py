@@ -10,11 +10,6 @@ from .models import ContactMessage, Post, SiteProfile, Topic
 
 class BlogTests(TestCase):
     @classmethod
-    def test_post_has_share_tags(self):
-        response = self.client.get(self.p1.get_absolute_url())
-        self.assertContains(response, 'property="og:title" content="Frieren review"')
-        self.assertContains(response, 'name="twitter:card"')
-        
     def setUpTestData(cls):
         cls.anime = Topic.objects.create(name="Anime")
         cls.coding = Topic.objects.create(name="Coding")
@@ -90,3 +85,8 @@ class BlogTests(TestCase):
         SiteProfile.objects.create(display_name="A")
         SiteProfile.objects.create(display_name="B")
         self.assertEqual(SiteProfile.objects.count(), 1)
+
+    def test_post_has_share_tags(self):
+        response = self.client.get(self.p1.get_absolute_url())
+        self.assertContains(response, 'property="og:title" content="Frieren review"')
+        self.assertContains(response, 'name="twitter:card"')
