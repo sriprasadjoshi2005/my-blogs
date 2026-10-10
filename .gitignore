@@ -21,6 +21,7 @@ media/
 Thumbs.db
 
 # Optional: uncomment if you don't want your background pictures on GitHub
+static/backgrounds/*.gif
 # static/backgrounds/*.jpg
 # static/backgrounds/*.jpeg
 # static/backgrounds/*.png
