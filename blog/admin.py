@@ -69,11 +69,11 @@ class ContactMessageAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ("author", "post", "short_body", "created_at", "is_approved")
+    list_display = ("author", "post", "short_body", "parent", "created_at", "is_approved")
     list_filter = ("is_approved", "created_at")
     list_editable = ("is_approved",)
     search_fields = ("body", "author__username", "post__title")
-    readonly_fields = ("post", "author", "created_at")
+    readonly_fields = ("post", "author", "parent", "created_at")
     actions = ["approve_selected", "hide_selected"]
 
     def has_add_permission(self, request):

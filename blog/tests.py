@@ -109,9 +109,10 @@ class CommentTests(TestCase):
     def test_logged_in_user_can_comment_and_it_shows(self):
         self.client.force_login(self.user)
         res = self.client.post(self.url, {"body": "Great review!"})
-        self.assertRedirects(res, f"{self.url}#comments", fetch_redirect_response=False)
+        new = Comment.objects.get()
+        self.assertRedirects(res, f"{self.url}#comment-{new.pk}", fetch_redirect_response=False)
         self.assertContains(self.client.get(self.url), "Great review!")
-        self.assertEqual(Comment.objects.get().author, self.user)
+        self.assertEqual(new.author, self.user)
 
     def test_hidden_comment_is_not_shown(self):
         Comment.objects.create(post=self.post, author=self.user, body="Secret words", is_approved=False)
@@ -173,3 +174,104 @@ class CommentTests(TestCase):
             {"username": "safe", "password1": "Zq7!mellow-tree", "password2": "Zq7!mellow-tree", "next": "https://evil.example/"},
         )
         self.assertRedirects(res, reverse("blog:home"))
+
+
+class ReplyTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.post = Post.objects.create(title="Reply post", body="<p>Hello</p>", status="published")
+        cls.other_post = Post.objects.create(title="Other post", body="<p>Hi</p>", status="published")
+        cls.fan = User.objects.create_user("fan", password="correct-horse-42")
+        cls.owner = User.objects.create_user("owner", password="correct-horse-43", is_staff=True)
+        cls.top = Comment.objects.create(post=cls.post, author=cls.fan, body="Top level thought")
+        cls.url = cls.post.get_absolute_url()
+
+    def reply(self, text, parent=None):
+        return self.client.post(self.url, {"body": text, "parent": (parent or self.top).pk})
+
+    def test_reply_is_saved_under_its_parent_and_shown_nested(self):
+        self.client.force_login(self.owner)
+        res = self.reply("Thanks for reading!")
+        new = Comment.objects.get(body="Thanks for reading!")
+        self.assertEqual(new.parent, self.top)
+        self.assertRedirects(res, f"{self.url}#comment-{new.pk}", fetch_redirect_response=False)
+        page = self.client.get(self.url)
+        self.assertContains(page, "Thanks for reading!")
+        self.assertContains(page, "reply-list")
+        self.assertContains(page, "Comments (2)")
+
+    def test_staff_replies_get_author_badge_but_fans_do_not(self):
+        Comment.objects.create(post=self.post, author=self.owner, body="Owner here", parent=self.top)
+        page = self.client.get(self.url)
+        self.assertContains(page, 'class="badge"', count=1)
+
+    def test_reply_to_a_reply_attaches_to_the_original_comment(self):
+        first = Comment.objects.create(post=self.post, author=self.owner, body="First reply", parent=self.top)
+        viewer = get_user_model().objects.create_user("viewer", password="correct-horse-44")
+        self.client.force_login(viewer)
+        self.reply("@owner and another", parent=first)
+        self.assertEqual(Comment.objects.get(body="@owner and another").parent, self.top)
+
+    def test_guest_cannot_reply(self):
+        res = self.reply("sneaky")
+        self.assertEqual(res.status_code, 302)
+        self.assertIn(reverse("blog:login"), res["Location"])
+        self.assertFalse(Comment.objects.filter(body="sneaky").exists())
+
+    def test_cannot_reply_to_comment_from_another_post(self):
+        elsewhere = Comment.objects.create(post=self.other_post, author=self.fan, body="Elsewhere")
+        self.client.force_login(self.owner)
+        self.client.post(self.url, {"body": "cross post", "parent": elsewhere.pk})
+        self.assertFalse(Comment.objects.filter(body="cross post").exists())
+
+    def test_bad_parent_ids_are_handled(self):
+        self.client.force_login(self.owner)
+        for bad in ("abc", "999999", "-1", ""):
+            res = self.client.post(self.url, {"body": f"bad{bad}", "parent": bad})
+            self.assertIn(res.status_code, (200, 302))
+        self.assertFalse(Comment.objects.filter(body__startswith="bad", parent__isnull=False).exists())
+
+    def test_hiding_a_comment_hides_its_replies(self):
+        Comment.objects.create(post=self.post, author=self.owner, body="Reply to hide", parent=self.top)
+        Comment.objects.filter(pk=self.top.pk).update(is_approved=False)
+        page = self.client.get(self.url)
+        self.assertNotContains(page, "Top level thought")
+        self.assertNotContains(page, "Reply to hide")
+
+    def test_hidden_reply_is_not_shown_or_counted(self):
+        Comment.objects.create(post=self.post, author=self.owner, body="Hidden one", parent=self.top, is_approved=False)
+        page = self.client.get(self.url)
+        self.assertNotContains(page, "Hidden one")
+        self.assertContains(page, "Comments (1)")
+
+    def test_empty_reply_is_rejected(self):
+        self.client.force_login(self.owner)
+        res = self.reply("   ")
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(Comment.objects.filter(parent=self.top).count(), 0)
+
+    def test_reply_cooldown_applies(self):
+        self.client.force_login(self.owner)
+        self.reply("one")
+        self.reply("two")
+        self.assertEqual(Comment.objects.filter(parent=self.top).count(), 1)
+
+    def test_reply_html_is_escaped(self):
+        Comment.objects.create(post=self.post, author=self.fan, body="<b onclick=x>hi</b>", parent=self.top)
+        page = self.client.get(self.url)
+        self.assertNotContains(page, "<b onclick=x>")
+        self.assertContains(page, "&lt;b onclick=x&gt;")
+
+    def test_logged_in_reply_box_is_prefilled_for_replies_only(self):
+        Comment.objects.create(post=self.post, author=self.owner, body="Owner reply", parent=self.top)
+        self.client.force_login(self.fan)
+        page = self.client.get(self.url)
+        self.assertContains(page, "@owner ")
+        self.assertNotContains(page, "@fan ")
+
+    def test_replies_do_not_break_signed_out_page(self):
+        Comment.objects.create(post=self.post, author=self.owner, body="Owner reply", parent=self.top)
+        page = self.client.get(self.url)
+        self.assertContains(page, "reply-login")
+        self.assertNotContains(page, 'name="parent"')

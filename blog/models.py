@@ -169,6 +169,9 @@ class Comment(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="blog_comments"
     )
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies"
+    )
     body = models.TextField(max_length=1000)
     is_approved = models.BooleanField(
         default=True, help_text="Untick to hide this comment from the site."

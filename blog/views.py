@@ -6,7 +6,7 @@ from django.contrib.auth import login
 from django.contrib.auth.views import redirect_to_login
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -78,23 +78,59 @@ def post_detail(request, slug):
             messages.error(request, "Comments are closed on this post.")
             return redirect(post.get_absolute_url())
 
+        # A reply carries the id of the comment it answers.
+        parent = None
+        parent_id = request.POST.get("parent", "")
+        if parent_id:
+            parent = (
+                Comment.objects.filter(pk=parent_id if parent_id.isdigit() else 0, post=post, is_approved=True)
+                .select_related("parent")
+                .first()
+            )
+            if parent is None:
+                messages.error(request, "That comment is no longer there to reply to.")
+                return redirect(f"{post.get_absolute_url()}#comments")
+            if parent.parent_id:  # replies stay one level deep: answer the original comment
+                parent = parent.parent
+
         comment_form = CommentForm(request.POST)
         cooldown = timezone.now() - timedelta(seconds=settings.COMMENT_COOLDOWN_SECONDS)
-        if Comment.objects.filter(author=request.user, created_at__gte=cooldown).exists():
+        too_fast = Comment.objects.filter(author=request.user, created_at__gte=cooldown).exists()
+        if too_fast:
             messages.error(request, "Easy there! Please wait a few seconds before commenting again.")
         elif comment_form.is_valid():
             comment = comment_form.save(commit=False)
             comment.post = post
             comment.author = request.user
+            comment.parent = parent
             comment.is_approved = settings.COMMENTS_AUTO_APPROVE
             comment.save()
+            noun = "reply" if parent else "comment"
             if comment.is_approved:
-                messages.success(request, "Thanks! Your comment has been posted.")
-            else:
-                messages.success(request, "Thanks! Your comment will appear once it has been approved.")
+                messages.success(request, f"Thanks! Your {noun} has been posted.")
+                return redirect(f"{post.get_absolute_url()}#comment-{comment.pk}")
+            messages.success(request, f"Thanks! Your {noun} will appear once it has been approved.")
             return redirect(f"{post.get_absolute_url()}#comments")
 
-    comments = post.comments.filter(is_approved=True).select_related("author") if comments_open else []
+        if parent is not None:  # reply boxes aren't re-shown with errors, so say what went wrong
+            if not too_fast:
+                messages.error(request, "A reply can't be empty or longer than 1000 characters.")
+            return redirect(f"{post.get_absolute_url()}#comments")
+
+    comments, comments_count = [], 0
+    if comments_open:
+        comments = list(
+            post.comments.filter(is_approved=True, parent__isnull=True)
+            .select_related("author")
+            .prefetch_related(
+                Prefetch(
+                    "replies",
+                    queryset=Comment.objects.filter(is_approved=True).select_related("author"),
+                    to_attr="visible_replies",
+                )
+            )
+        )
+        comments_count = sum(1 + len(c.visible_replies) for c in comments)
     share_image = request.build_absolute_uri(post.cover_image.url) if post.cover_image else ""
     return render(
         request,
@@ -105,6 +141,7 @@ def post_detail(request, slug):
             "older": older,
             "share_image": share_image,
             "comments": comments,
+            "comments_count": comments_count,
             "comments_open": comments_open,
             "comment_form": comment_form,
         },
