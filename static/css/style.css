@@ -388,3 +388,6 @@ a.chip-on:hover { color: var(--ink); background: #ffc2d2; }
   html { scroll-behavior: auto; }
   .bg-slide, .card, .button { transition: none; }
 }
+
+/* Equations: long ones scroll sideways instead of breaking the page */
+.prose .katex-display { overflow-x: auto; overflow-y: hidden; padding: .4rem 0; }
