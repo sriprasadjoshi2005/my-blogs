@@ -91,4 +91,23 @@
   {% if older %}<a href="{{ older.get_absolute_url }}">Previous: {{ older.title }}</a>{% else %}<span></span>{% endif %}
   {% if newer %}<a href="{{ newer.get_absolute_url }}">Next: {{ newer.title }}</a>{% else %}<span></span>{% endif %}
 </nav>
+{# Equations. In the editor write \( x^2 \) for inline maths and $$ ... $$ for a centred equation. #}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.9/dist/katex.min.css" integrity="sha384-lPx0C4zIUZLpveABMwOFcFeGZwsvKBJfhJ85FN1PYOV7xApBcFMhcAEMVKF8loOI" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.9/dist/katex.min.js" integrity="sha384-19KE2cFb3U+RUWmyhBz7aLOGDG8WrRC6hE3oY/HTZZlAAVWYTdmvLC//+TIV3zUx" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.18.9/dist/contrib/auto-render.min.js" integrity="sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz" crossorigin="anonymous"></script>
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    var postBody = document.querySelector(".prose");
+    if (postBody && window.renderMathInElement) {
+      renderMathInElement(postBody, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "\\[", right: "\\]", display: true },
+          { left: "\\(", right: "\\)", display: false }
+        ],
+        throwOnError: false
+      });
+    }
+  });
+</script>
 {% endblock %}
