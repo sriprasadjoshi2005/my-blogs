@@ -318,6 +318,7 @@ a.chip-on:hover { color: var(--ink); background: #ffc2d2; }
 }
 .field input:focus, .field textarea:focus { outline: none; border-color: var(--sakura); background: rgba(255, 255, 255, .11); }
 .field.has-error input, .field.has-error textarea { border-color: #ff7a8a; }
+.field textarea { resize: vertical; min-height: 6rem; }
 .error { color: #ffa1ad; font-size: .92rem; margin: .3rem 0 0; }
 .hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
 .helptext { color: var(--mist-dim); font-size: .88rem; margin-top: .3rem; }
